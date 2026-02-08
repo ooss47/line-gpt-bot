@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from google.genai import Client
+import google.generativeai as genai
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
@@ -21,8 +21,9 @@ GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
-# 初始化 Gemini 客戶端
-client = Client(api_key=GEMINI_API_KEY)
+# 配置 Gemini API
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel('gemini-2.5-flash')
 
 # Webhook 路由
 @app.route("/callback", methods=['POST'])
@@ -49,10 +50,7 @@ def handle_message(event):
 
     # 調用 Gemini API 生成回覆
     try:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=user_message,
-        )
+        response = model.generate_content(user_message)
         ai_response = response.text
     except Exception as e:
         app.logger.error(f"Gemini API error: {e}")
